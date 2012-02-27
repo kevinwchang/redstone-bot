@@ -30,46 +30,36 @@ def string(s)
 	return short(s.length) + s.encode('UCS-2BE').force_encoding('ASCII-8BIT')
 end
 
-def read_byte()
+def read_byte
 	return @socket.read(1).unpack('c')[0]
 end
 
-def read_unsigned_byte()
+def read_unsigned_byte
 	return @socket.read(1).unpack('C')[0]
 end
 
-def read_short()
+def read_short
 	return @socket.read(2).unpack('s>')[0]
 end
 
-def read_int()
+def read_int
 	return @socket.read(4).unpack('l>')[0]
 end
 
-def read_long()
+def read_long
 	return @socket.read(8).unpack('q>')[0]
 end
 
-def read_float()
+def read_float
 	return @socket.read(4).unpack('g')[0]
 end
 
-def read_double()
+def read_double
 	return @socket.read(8).unpack('G')[0]
 end
 
-def read_string()
-	return @socket.read(read_short() * 2).force_encoding('UCS-2BE')
-end
-
-def read_metadata()
-	b = 0
-  buf = ''
-	while (b.ord != 127)
-		b = @socket.read(1)
-		buf << b
-  end
-	return buf
+def read_string
+	return @socket.read(read_short * 2).force_encoding('UCS-2BE')
 end
 
 ENCHANTABLE = [0x103, 0x105, 0x15A, 0x167,
@@ -84,18 +74,34 @@ ENCHANTABLE = [0x103, 0x105, 0x15A, 0x167,
                0x136, 0x137, 0x138, 0x139,
                0x13A, 0x13B, 0x13C, 0x13D]
 
-def read_slot()
+def read_slot
 	h = {}
-  h[:id] = read_short()
-  if (h[:id] != -1)
-		h[:count] = read_byte()
-		h[:damage] = read_short()
-		if (ENCHANTABLE.include?(h[:id]))
-			enchant_data_len = read_short()
-			if (enchant_data_len > 0)
+  h[:id] = read_short
+  if h[:id] != -1
+		h[:count] = read_byte
+		h[:damage] = read_short
+		if ENCHANTABLE.include?(h[:id])
+			enchant_data_len = read_short
+			if enchant_data_len > 0
 				h[:enchant_data] = @socket.read(enchant_data_len)
 			end
 		end
 	end
 	return h
+end
+
+def read_metadata
+  buf = {}
+	while (b = @socket.read(1).ord) != 0x7F
+		buf[b & 0x1F] = case b >> 5
+		when 0 then read_byte
+		when 1 then read_short
+		when 2 then read_int
+		when 3 then read_float
+		when 4 then read_string
+		when 5 then read_slot
+		when 6 then [read_int, read_int, read_int]
+		end
+  end
+	return buf
 end
