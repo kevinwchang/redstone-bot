@@ -7,7 +7,7 @@ require 'thread'
 
 require_relative 'packets'
 
-USERNAME = 'ಠ_ಠ'
+USERNAME = 'bot'
 
 def parse_message(fields = {})
 	if !['<', "\u00A7"].include?(fields[:message][0].encode('UTF-8')) && fields[:message].split[0].encode('UTF-8') != USERNAME
@@ -17,13 +17,13 @@ end
 
 def time_of_day(time)
 	return case time
-	when 0..5999 then :day_am
-	when 6000..11999 then :day_pm
-	when 12000..13799 then :sunset
-	when 13800..17999 then :night_pm
-	when 18000..22199 then :night_am
-	when 22200..23999 then :sunrise
-	end
+		when 0..5999 then :day_am
+		when 6000..11999 then :day_pm
+		when 12000..13799 then :sunset
+		when 13800..17999 then :night_pm
+		when 18000..22199 then :night_am
+		when 22200..23999 then :sunrise
+		end
 end
 
 @last_time = nil
@@ -37,16 +37,15 @@ def parse_time(fields = {})
 		puts "Time is #{time}; initializing @last_time to #{tod.to_s}"
 	elsif @last_time != tod
 		@last_time = tod
-		send_chat_message(message:
-			case tod
-			when :day_am then 'It is day!'
-			when :day_pm then 'It is noon!'
-			when :sunset then 'The sun is setting!'
-			when :night_pm then 'It is night!'
-			when :night_am then 'It is midnight!'
-			when :sunrise then 'The sun is rising!'
-			end
-		)
+#		send_chat_message(message: case tod
+#			when :day_am then 'It is day!'
+#			when :day_pm then 'It is noon!'
+#			when :sunset then 'The sun is setting!'
+#			when :night_pm then 'It is night!'
+#			when :night_am then 'It is midnight!'
+#			when :sunrise then 'The sun is rising!'
+#			end
+#		)
 	end
 end
 
@@ -98,6 +97,10 @@ def respond_health(fields = {})
 	@health = fields[:health]
 end
 
+def respond_explosion(fields = {})
+	send_chat_message(message: 'YOUR HEAD A SPLODE')
+end
+
 @position_fields = nil
 
 def update_position(opts = {})
@@ -107,6 +110,7 @@ end
 def respond_position(fields = {})
   @position_fields = fields
 	@position_fields[:on_ground] = 1
+	@position_fields[:pitch] = 0
 	@position_fields[:yaw] = 270
 	update_position
 end
@@ -116,15 +120,13 @@ def parse_disconnect(fields = {})
 	exit
 end
 
-PROTOCOL_VERSION = 23
-
 @socket = TCPSocket.open('localhost', 25565)
 
 send_handshake(username: USERNAME)
 receive_packet
 
-send_login_request(username: USERNAME, protocol_version: PROTOCOL_VERSION)
-receive_packet
+send_login_request(username: USERNAME)
+eid = receive_packet[:eid]
 
 last_keep_alive = last_position_update = Time.at(0)
 
@@ -135,6 +137,7 @@ while true
 			handler_0x04: method(:parse_time),
 			handler_0x08: method(:respond_health),
 			handler_0x0D: method(:respond_position),
+			handler_0x3C: method(:respond_explosion),
 			handler_0xFF: method(:parse_disconnect),
 		  whitelist: [0x03, 0x08, 0x0D]
 		)

@@ -94,14 +94,14 @@ def read_metadata
   buf = {}
 	while (b = @socket.read(1).ord) != 0x7F
 		buf[b & 0x1F] = case b >> 5
-		when 0 then read_byte
-		when 1 then read_short
-		when 2 then read_int
-		when 3 then read_float
-		when 4 then read_string
-		when 5 then read_slot
-		when 6 then [read_int, read_int, read_int]
-		end
+			when 0 then read_byte
+			when 1 then read_short
+			when 2 then read_int
+			when 3 then read_float
+			when 4 then read_string
+			when 5 then read_slot
+			when 6 then [read_int, read_int, read_int]
+			end
   end
 	return buf
 end

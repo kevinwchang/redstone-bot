@@ -5,9 +5,12 @@ def send_keep_alive(fields = {})
 	@socket.write(byte(0x00) + int(0))
 end
 
+@PROTOCOL_VERSION = 28
+
 def send_login_request(fields = {})
+	fields = {protocol_version: @PROTOCOL_VERSION}.merge(fields)
 	puts "Sending Login Request (0x01) #{fields.inspect}"
-	@socket.write(byte(0x01) + int(fields[:protocol_version]) + string(fields[:username]) + long(0) + string('') + int(0) + byte(0) + byte(0) + unsigned_byte(0) + unsigned_byte(0))
+	@socket.write(byte(0x01) + int(fields[:protocol_version]) + string(fields[:username]) + string('') + int(0) + int(0) + byte(0) + unsigned_byte(0) + unsigned_byte(0))
 end
 
 def send_handshake(fields = {})
@@ -22,12 +25,17 @@ end
 
 def send_respawn(fields = {dimension: 0, difficulty: 1, game_mode: 0, world_height: 128, map_seed: 0, level_type: 'DEFAULT'})
 	puts "Sending Respawn (0x09) #{fields.inspect}"
-	@socket.write(byte(0x09) + byte(fields[:dimension]) + byte(fields[:difficulty]) + byte(fields[:game_mode]) + short(fields[:world_height]) + long(fields[:map_seed]) + string(fields[:level_type]))
+	@socket.write(byte(0x09) + int(fields[:dimension]) + byte(fields[:difficulty]) + byte(fields[:game_mode]) + short(fields[:world_height]) + string(fields[:level_type]))
 end
 
 def send_player_position_and_look(fields = {})
 	puts "Sending Player Position & Look (0x0D) #{fields.inspect}" if !fields.has_key?(:squelch) 
 	@socket.write(byte(0x0D) + double(fields[:x]) + double(fields[:y]) + double(fields[:stance]) + double(fields[:z]) + float(fields[:yaw]) + float(fields[:pitch]) + byte(fields[:on_ground]))
+end
+
+def send_entity_head_look(fields={})
+	puts "Sending Entity Head Look (0x23) #{fields.inspect}" if !fields.has_key?(:squelch) 
+	@socket.write(byte(0x23) + int(fields[:eid]) + byte(fields[:head_yaw]))
 end
 
 @prev_packet_hex = nil
@@ -45,10 +53,9 @@ def receive_packet(opts = {})
 		packet_name = 'Login Request'
 		fields[:eid] = read_int
 		read_string
-		fields[:map_seed] = read_long
 		fields[:level_type] = read_string
 		fields[:game_mode] = read_int
-		fields[:dimension] = read_byte
+		fields[:dimension] = read_int
 		fields[:difficulty] = read_byte
 		fields[:world_height] = read_unsigned_byte
 		fields[:max_players] = read_unsigned_byte
@@ -79,11 +86,10 @@ def receive_packet(opts = {})
 		fields[:food_saturation] = read_float
 	when 0x09
 		packet_name = 'Respawn'
-		fields[:dimension] = read_byte
+		fields[:dimension] = read_int
 		fields[:difficulty] = read_byte
 		fields[:game_mode] = read_byte
 		fields[:world_height] = read_short
-		fields[:map_seed] = read_long
 		fields[:level_type] = read_string
 	when 0x0D
 		packet_name = 'Player Position & Look'
@@ -153,6 +159,7 @@ def receive_packet(opts = {})
 		fields[:z] = read_int
 		fields[:yaw] = read_byte
 		fields[:pitch] = read_byte
+		fields[:head_yaw] = read_byte
 		fields[:metadata] = read_metadata
 	when 0x19
 		packet_name = 'Painting'
@@ -205,6 +212,10 @@ def receive_packet(opts = {})
 		fields[:z] = read_int
 		fields[:yaw] = read_byte
 		fields[:pitch] = read_byte
+	when 0x23
+		packet_name = 'Entity Head Look'
+		fields[:eid] = read_int
+		fields[:head_yaw] = read_byte
 	when 0x26
 		packet_name = 'Entity Status'
 		fields[:eid] = read_int
@@ -226,30 +237,20 @@ def receive_packet(opts = {})
 	when 0x33
 		packet_name = 'Map Chunk'
 		fields[:x] = read_int
-		fields[:y] = read_short
 		fields[:z] = read_int
-		fields[:size_x] = read_byte
-		fields[:size_y] = read_byte
-		fields[:size_z] = read_byte
+		fields[:ground_up_contiguous] = read_byte
+		fields[:primary_bit_map] = read_short
+		fields[:add_bit_map] = read_short
 		fields[:compressed_size] = read_int
+		read_int
 		fields[:compressed_data] = @socket.read(fields[:compressed_size])
 	when 0x34
 		packet_name = 'Multi Block Change'
 		fields[:chunk_x] = read_int
 		fields[:chunk_z] = read_int
 		fields[:count] = read_short
-		fields[:coordinate_array] = []
-		fields[:type_array] = []
-		fields[:metadata_array] = []
-		for i in 1..fields[:count]
-			fields[:coordinate_array] << read_short
-		end
-		for i in 1..fields[:count]
-			fields[:type_array] << read_byte
-		end
-		for i in 1..fields[:count]
-			fields[:metadata_array] << read_byte
-		end
+		fields[:data_size] = read_int
+		fields[:data] = @socket.read(fields[:data_size])
 	when 0x35
 		packet_name = 'Block Change'
 		fields[:x] = read_int
@@ -264,6 +265,17 @@ def receive_packet(opts = {})
 		fields[:z] = read_int
 		fields[:byte_1] = read_byte
 		fields[:byte_2] = read_byte
+	when 0x3C
+		packet_name = 'Explosion'
+		fields[:x] = read_double
+		fields[:y] = read_double
+		fields[:z] = read_double
+		fields[:radius?] = read_float
+		fields[:record_count] = read_int
+		fields[:records] = []
+		for i in 1..fields[:record_count]
+			fields[:records] << [read_byte, read_byte, read_byte]
+		end
 	when 0x3D
 		packet_name = 'Sound/Particle Effect'
 		fields[:effect_id] = read_int
@@ -313,6 +325,15 @@ def receive_packet(opts = {})
 		fields[:text2] = read_string
 		fields[:text3] = read_string
 		fields[:text4] = read_string
+	when 0x84
+		packet_name = 'Update Tile Entity'
+		fields[:x] = read_int
+		fields[:y] = read_short
+		fields[:z] = read_int
+		fields[:action] = read_byte
+		fields[:custom1] = read_int
+		fields[:custom2] = read_int
+		fields[:custom3] = read_int
 	when 0xFF
 		packet_name = 'Disconnect/Kick'
 		fields[:reason] = read_string
@@ -330,4 +351,6 @@ def receive_packet(opts = {})
 	opts[handler_sym].call(fields) if opts.has_key?(handler_sym)
 
 	@prev_packet_hex = packet_hex
+
+	return fields
 end
