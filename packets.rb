@@ -13,9 +13,10 @@ def send_login_request(fields = {})
 	@socket.write(byte(0x01) + int(fields[:protocol_version]) + string(fields[:username]) + string('') + int(0) + int(0) + byte(0) + unsigned_byte(0) + unsigned_byte(0))
 end
 
-def send_handshake(fields = {})
-	puts "Sending Handshake (0x02) #{fields.inspect}"
-	@socket.write(byte(0x02) + string(fields[:username]))
+def send_handshake(username, hostname, port)
+	str = "#{username};#{hostname}:#{port}"
+	puts "Sending Handshake (0x02) #{str.inspect}"
+	@socket.write(byte(0x02) + string(str))
 end
 
 def send_chat_message(fields = {})

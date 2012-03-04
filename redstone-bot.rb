@@ -1,6 +1,8 @@
 #!/usr/bin/ruby-rvm-env 1.9.3
 # encoding: UTF-8
 
+raise "Please use Ruby 1.9.3." if RUBY_VERSION != "1.9.3"
+
 require 'socket'
 require 'io/wait'
 require 'thread'
@@ -124,14 +126,10 @@ def parse_disconnect(fields = {})
 	exit
 end
 
-puts "tmphax"
-TCPSocket.open('google.com', 80)
-
 puts "Connecting to #{HOSTNAME}:#{PORT}..."
-@socket = TCPSocket.open(HOSTNAME, PORT)
-puts "Connected."
+@socket = TCPSocket.open HOSTNAME, PORT
 
-send_handshake(username: USERNAME)
+send_handshake USERNAME, HOSTNAME, PORT
 receive_packet
 
 send_login_request(username: USERNAME)
