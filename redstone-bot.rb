@@ -7,7 +7,11 @@ require 'thread'
 
 require_relative 'packets'
 
-USERNAME = 'bot'
+if File.exist? 'config.rb'
+	require_relative 'config.rb'
+else
+	require_relative 'default_config.rb'
+end
 
 def parse_message(fields = {})
 	if !['<', "\u00A7"].include?(fields[:message][0].encode('UTF-8')) && fields[:message].split[0].encode('UTF-8') != USERNAME
@@ -120,7 +124,12 @@ def parse_disconnect(fields = {})
 	exit
 end
 
-@socket = TCPSocket.open('localhost', 25565)
+puts "tmphax"
+TCPSocket.open('google.com', 80)
+
+puts "Connecting to #{HOSTNAME}:#{PORT}..."
+@socket = TCPSocket.open(HOSTNAME, PORT)
+puts "Connected."
 
 send_handshake(username: USERNAME)
 receive_packet
