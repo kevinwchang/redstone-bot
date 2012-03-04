@@ -1,7 +1,7 @@
 #!/usr/bin/ruby-rvm-env 1.9.3
 # encoding: UTF-8
 
-raise "Please use Ruby 1.9.3." if RUBY_VERSION != "1.9.3"
+raise "Please use Ruby 1.9.3 or later." if RUBY_VERSION < "1.9.3"
 
 require 'socket'
 require 'io/wait'
