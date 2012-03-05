@@ -5,10 +5,10 @@ def send_keep_alive(fields = {})
 	@socket.write(byte(0x00) + int(0))
 end
 
-@PROTOCOL_VERSION = 28
+PROTOCOL_VERSION = 28
 
-def send_login_request(fields = {})
-	fields = {protocol_version: @PROTOCOL_VERSION}.merge(fields)
+def send_login_request(fields)
+	fields = {protocol_version: PROTOCOL_VERSION}.merge(fields)
 	puts "Sending Login Request (0x01) #{fields.inspect}"
 	@socket.write(byte(0x01) + int(fields[:protocol_version]) + string(fields[:username]) + string('') + int(0) + int(0) + byte(0) + unsigned_byte(0) + unsigned_byte(0))
 end
