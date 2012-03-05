@@ -37,7 +37,8 @@ class Bot
 
 			now = Time.now
 			if @position_fields != nil && now - last_position_update >= 0.05
-				update_position(squelch: true)
+				update_position
+				send_player_position_and_look squelch: true
 				last_position_update = now
 			end
 			if now - last_keep_alive >= 1
@@ -65,16 +66,17 @@ class Bot
 	def respond_chat(fields)
 	end
 	
-	def update_position(opts = {})
-		send_player_position_and_look(opts.merge(@position_fields))
+	def update_position
+	  @position_fields[:y] -= 0.1
+		@position_fields[:stance] -= 0.1
 	end
-
+	
 	def respond_position(fields = {})
 		@position_fields = fields
 		@position_fields[:on_ground] = 1
 		@position_fields[:pitch] = 0
 		@position_fields[:yaw] = 270
-		update_position
+		send_player_position_and_look squelch: true
 	end
 	
 	def parse_disconnect(fields = {})

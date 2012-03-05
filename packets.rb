@@ -31,8 +31,9 @@ def send_respawn(fields = {dimension: 0, difficulty: 1, game_mode: 0, world_heig
 	@socket.write(byte(0x09) + int(fields[:dimension]) + byte(fields[:difficulty]) + byte(fields[:game_mode]) + short(fields[:world_height]) + string(fields[:level_type]))
 end
 
-def send_player_position_and_look(fields = {})
-	puts "Sending Player Position & Look (0x0D) #{fields.inspect}" if !fields.has_key?(:squelch) 
+def send_player_position_and_look(opts = {})
+	puts "Sending Player Position & Look (0x0D) #{fields.inspect}" if !opts[:squelch]
+	fields = @position_fields
 	@socket.write(byte(0x0D) + double(fields[:x]) + double(fields[:y]) + double(fields[:stance]) + double(fields[:z]) + float(fields[:yaw]) + float(fields[:pitch]) + byte(fields[:on_ground]))
 end
 
