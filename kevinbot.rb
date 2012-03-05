@@ -23,9 +23,9 @@ class KevinBot < Bot
 	end
 
 	def look_closest_target
-		closest = closest_target
-		if !closest.nil?
-			x, y, z = closest[:look_vector].to_a
+		@closest = closest_target
+		if !@closest.nil?
+			x, y, z = @closest[:look_vector].to_a
 			@position[:yaw] = Math::atan2(x, -z) * 180 / Math::PI + 180
 			@position[:pitch] = -Math::atan2(y, Math::sqrt((x * x) + (z * z))) * 180 / Math::PI
 		end
@@ -87,6 +87,46 @@ class KevinBot < Bot
 		look_closest_target
   end
 
+ def handle_player_position_and_look(fields = {})
+    @position = fields
+		@landed = true
+    #puts "Received position: #{position_to_string}"
+    send_player_position_and_look squelch: true
+  end
+
+	FallRate = 0.5
+  JumpRate = 0.5
+  JumpTime = 0.2
+	def update_position
+		if @closest != nil && @position != nil && @closest[:distance] > 2
+			@position[:x] += @closest[:look_vector].normalize[0] / 4
+			@position[:z] += @closest[:look_vector].normalize[2] / 4
+			puts @closest[:look_vector][1]
+			if @jumping != true && @landed == true
+				@jumping = true
+        @jumping_start = Time.now
+				@landed = false
+			end
+		end
+
+		if @jumping
+						@position[:on_ground] = 0
+						change_y JumpRate
+						if Time.now - @jumping_start > JumpTime
+										@jumping = false
+						end
+		else
+						fall FallRate
+		end
+
+
+		@my_position = Vector[@position[:x], @position[:y], @position[:z]]
+		update_all_distances
+		look_closest_target
+ 		send_player_position_and_look squelch: true
+	end
+
 end
 
 KevinBot.new.run
+
