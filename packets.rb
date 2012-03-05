@@ -32,6 +32,12 @@ class Bot
 		@socket.write(byte(0x09) + int(fields[:dimension]) + byte(fields[:difficulty]) + byte(fields[:game_mode]) + short(fields[:world_height]) + string(fields[:level_type]))
 	end
 
+	def send_player_look(fields = {})
+		fields = @position.select { |key, value| [:yaw, :pitch, :on_ground].include?(key) }.merge(fields)
+		puts "Sending Player Look (0x0D) #{fields.inspect}" if !fields[:squelch]
+		@socket.write(byte(0x0C) + float(fields[:yaw]) + float(fields[:pitch]) + byte(fields[:on_ground]))
+	end
+
 	def send_player_position_and_look(opts = {})
 		puts "Sending Player Position & Look (0x0D) #{fields.inspect}" if !opts[:squelch]
 		fields = @position
@@ -58,8 +64,8 @@ class Bot
 		when 0x01
 			packet_name = 'Login Request'
 			fields[:eid] = read_int
-			read_string_raw
-			fields[:level_type] = read_string_raw
+			read_string
+			fields[:level_type] = read_string
 			fields[:game_mode] = read_int
 			fields[:dimension] = read_int
 			fields[:difficulty] = read_byte
@@ -67,7 +73,7 @@ class Bot
 			fields[:max_players] = read_unsigned_byte
 		when 0x02
 			packet_name = 'Handshake'
-			fields[:connection_hash] = read_string_raw
+			fields[:connection_hash] = read_string
 		when 0x03
 			handler = :respond_chat
 			packet_name = 'Chat Message'
@@ -99,10 +105,10 @@ class Bot
 			fields[:difficulty] = read_byte
 			fields[:game_mode] = read_byte
 			fields[:world_height] = read_short
-			fields[:level_type] = read_string_raw
+			fields[:level_type] = read_string
 		when 0x0D
-			handler = :handle_position
 			packet_name = 'Player Position & Look'
+			handler = :handle_player_position_and_look
 			fields[:x] = read_double
 			fields[:stance] = read_double
 			fields[:y] = read_double
@@ -123,8 +129,9 @@ class Bot
 			fields[:animation] = read_byte
 		when 0x14
 			packet_name = 'Named Entity Spawn'
+			handler = :handle_named_entity_spawn
 			fields[:eid] = read_int
-			fields[:player_name] = read_string_raw
+			fields[:player_name] = read_string
 			fields[:x] = read_int
 			fields[:y] = read_int
 			fields[:z] = read_int
@@ -174,7 +181,7 @@ class Bot
 		when 0x19
 			packet_name = 'Painting'
 			fields[:eid] = read_int
-			fields[:title] = read_string_raw
+			fields[:title] = read_string
 			fields[:x] = read_int
 			fields[:y] = read_int
 			fields[:z] = read_int
@@ -194,22 +201,24 @@ class Bot
 			fields[:velocity_z] = read_short
 		when 0x1D
 			packet_name = 'Destroy Entity'
+			handler = :handle_destroy_entity
 			fields[:eid] = read_int
 		when 0x1F
 			packet_name = 'Entity Relative Move'
+			handler = :handle_entity_relative_move
 			fields[:eid] = read_int
 			fields[:dx] = read_byte
 			fields[:dy] = read_byte
 			fields[:dz] = read_byte
 		when 0x20
-			handler = :respond_entity_look
 			packet_name = 'Entity Look'
+			handler = :respond_entity_look
 			fields[:eid] = read_int 
 			fields[:yaw] = read_byte
 			fields[:pitch] = read_byte
 		when 0x21
 			packet_name = 'Entity Look and Relative Move'
-			handler = :respond_entity_look_and_relative_move
+			handler = :handle_entity_look_and_relative_move
 			fields[:eid] = read_int
 			fields[:dx] = read_byte
 			fields[:dy] = read_byte
@@ -218,6 +227,7 @@ class Bot
 			fields[:pitch] = read_byte
 		when 0x22
 			packet_name = 'Entity Teleport'
+			handler = :handle_entity_teleport
 			fields[:eid] = read_int
 			fields[:x] = read_int
 			fields[:y] = read_int
@@ -326,7 +336,7 @@ class Bot
 			fields[:amount] = read_byte
 		when 0xC9
 			packet_name = 'Player List Item'
-			fields[:player_name] = read_string_raw
+			fields[:player_name] = read_string
 			fields[:online] = read_byte
 			fields[:ping] = read_short
 		when 0x82
@@ -334,10 +344,10 @@ class Bot
 			fields[:x] = read_int
 			fields[:y] = read_short
 			fields[:z] = read_int
-			fields[:text1] = read_string_raw
-			fields[:text2] = read_string_raw
-			fields[:text3] = read_string_raw
-			fields[:text4] = read_string_raw
+			fields[:text1] = read_string
+			fields[:text2] = read_string
+			fields[:text3] = read_string
+			fields[:text4] = read_string
 		when 0x84
 			packet_name = 'Update Tile Entity'
 			fields[:x] = read_int
@@ -350,7 +360,7 @@ class Bot
 		when 0xFF
 			handler = :parse_disconnect
 			packet_name = 'Disconnect/Kick'
-			fields[:reason] = read_string_raw
+			fields[:reason] = read_string
 		else
 			chat "WHAT'S #{packet_hex} PRECIOUSSS"
 			raise "Received unrecognized packet (#{packet_hex}); previous packet was #{@prev_packet_hex}"

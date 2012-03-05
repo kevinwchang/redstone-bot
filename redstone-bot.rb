@@ -33,7 +33,7 @@ class Bot
 		
 		while true
 			if @socket.ready?
-				receive_packet(whitelist: [0x03, 0x08, 0x0D,0x21])
+				receive_packet(whitelist: [])
 			end
 
 			now = Time.now
@@ -60,9 +60,6 @@ class Bot
 	def parse_time(fields)
 	end
 	
-	def respond_position
-	end
-	
 	def respond_explosion(fields)
 	end
 	
@@ -71,13 +68,25 @@ class Bot
 	
 	def respond_entity_look(fields)
 	end
-	
-	def respond_entity_look_and_relative_move(fields)
+
+	def handle_destroy_entity(fields)
 	end
 	
+	def handle_entity_relative_move(fields)
+	end
+	
+	def handle_entity_look_and_relative_move(fields)
+	end
+
+	def handle_entity_teleport(fields)
+	end
+
 	def respond_chat(fields)
 	end
 	
+	def handle_named_entity_spawn(fields)
+	end
+
 	def update_position
 		fall
 	end
@@ -92,9 +101,8 @@ class Bot
 		@position[:stance] += dy
 	end
 	
-	def handle_position(fields = {})
+	def handle_player_position_and_look(fields = {})
 		@position = fields
-		respond_position
 		send_player_position_and_look squelch: true
 	end
 	
