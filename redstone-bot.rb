@@ -78,7 +78,6 @@ class Bot
 	
 	def fall(rate = 0.1)
 		change_y -rate
-		@position[:on_ground] = 1
 	end
 	
 	def change_y(dy)
