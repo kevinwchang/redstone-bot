@@ -1,5 +1,5 @@
-module JumpsOnCommand
-  def update_position
+module JumpsOnCommand		
+	def update_position
 		if @jumping
 			@position[:on_ground] = 0
 			change_y 1
@@ -7,13 +7,13 @@ module JumpsOnCommand
 				@jumping = false
 			end
 		else
-			fall 1
+			fall 0.1
 		end
 	end
 	
 	def respond_chat(fields)
-		if fields[:message] =~ /<[^>]+> jump!/
-			chat "OK!"
+		if fields[:message] =~ /<([^>]+)> jump!/
+			chat "OK, #$1!"
 			@jumping = true
 			@jumping_start = Time.now
 		end
