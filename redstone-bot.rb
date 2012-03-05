@@ -32,7 +32,7 @@ class Bot
 		
 		while true
 			if @socket.ready?
-				receive_packet(whitelist: [0x03, 0x08, 0x0D])
+				receive_packet(whitelist: [0x03, 0x08, 0x0D,0x21])
 			end
 
 			now = Time.now
@@ -61,6 +61,12 @@ class Bot
 	end
 	
 	def respond_health(fields)
+	end
+	
+	def respond_entity_look(fields)
+	end
+	
+	def respond_entity_look_and_relative_move(fields)
 	end
 	
 	def respond_chat(fields)

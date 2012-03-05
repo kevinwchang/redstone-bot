@@ -102,6 +102,20 @@ class MuffinBot < Bot
 	def respond_explosion(fields = {})
 		chat 'YOUR HEAD A SPLODE'
 	end
+	
+	def respond_entity_look(fields)
+		#fields[:yaw] = read_byte
+		#	fields[:pitch] = read_byte
+		@position_fields[:pitch] = fields[:yaw]
+		@position_fields[:yaw] = fields[:pitch]
+	end
+	
+	def respond_entity_look_and_relative_move(fields)
+		#@position_fields[:y] += fields[:dy]
+		#@position_fields[:x] += fields[:dx]
+		#@position_fields[:z] += fields[:dz]
+		respond_entity_look(fields)
+	end
 end
 
 MuffinBot.new.run

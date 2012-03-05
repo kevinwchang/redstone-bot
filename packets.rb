@@ -202,12 +202,14 @@ class Bot
 			fields[:dy] = read_byte
 			fields[:dz] = read_byte
 		when 0x20
+			handler = :respond_entity_look
 			packet_name = 'Entity Look'
-			fields[:eid] = read_int
+			fields[:eid] = read_int 
 			fields[:yaw] = read_byte
 			fields[:pitch] = read_byte
 		when 0x21
 			packet_name = 'Entity Look and Relative Move'
+			handler = :respond_entity_look_and_relative_move
 			fields[:eid] = read_int
 			fields[:dx] = read_byte
 			fields[:dy] = read_byte
