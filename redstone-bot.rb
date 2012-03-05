@@ -36,7 +36,7 @@ class Bot
 			end
 
 			now = Time.now
-			if @position_fields != nil && now - last_position_update >= 0.05
+			if @position != nil && now - last_position_update >= 0.05
 				update_position
 				send_player_position_and_look squelch: true
 				last_position_update = now
@@ -67,16 +67,14 @@ class Bot
 	end
 	
 	def update_position
-	  @position_fields[:y] -= 0.1
-		@position_fields[:stance] -= 0.1
-		@position_fields[:on_ground] = 1
+		@position[:y] -= 0.1
+		@position[:stance] -= 0.1
+		@position[:on_ground] = 1
 	end
 	
-	def respond_position(fields = {})
-		@position_fields = fields
-		@position_fields[:on_ground] = 1
-		@position_fields[:pitch] = 0
-		@position_fields[:yaw] = 270
+	def handle_position(fields = {})
+		@position = fields
+		respond_position
 		send_player_position_and_look squelch: true
 	end
 	

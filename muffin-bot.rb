@@ -82,7 +82,6 @@ end
 
 class MuffinBot < Bot
 	include TimeOfDayReporter
-	include JumpsOnCommand
 	
 	def respond_health(fields = {})
 		if @health != nil && fields[:health] < @health
@@ -101,6 +100,12 @@ class MuffinBot < Bot
 	
 	def respond_explosion(fields = {})
 		chat 'YOUR HEAD A SPLODE'
+	end
+	
+	def respond_position
+		@position[:on_ground] = 1
+		@position[:pitch] = 0
+		@position[:yaw] = 270
 	end
 end
 
