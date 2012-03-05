@@ -2,12 +2,12 @@ module JumpsOnCommand
   def update_position
 		if @jumping
 			@position[:on_ground] = 0
-			change_y 0.1
+			change_y 1
 			if Time.now - @jumping_start > 2
 				@jumping = false
 			end
 		else
-			fall
+			fall 1
 		end
 	end
 	

@@ -46,6 +46,11 @@ class Bot
 				send_keep_alive(squelch: true)
 				last_keep_alive = now
 			end
+			
+			if @health && @health <= 0
+				send_respawn
+				chat "I have returned!"
+			end
 		end
 	end
 	
@@ -71,8 +76,8 @@ class Bot
 		fall
 	end
 	
-	def fall
-		change_y -0.1
+	def fall(rate = 0.1)
+		change_y -rate
 		@position[:on_ground] = 1
 	end
 	
