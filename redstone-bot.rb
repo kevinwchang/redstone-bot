@@ -69,6 +69,9 @@ class Bot
 	def respond_entity_look_and_relative_move(fields)
 	end
 	
+	def handle_entity_status(fields)
+	end
+	
 	def respond_chat(fields)
 	end
 	

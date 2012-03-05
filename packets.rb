@@ -230,6 +230,7 @@ class Bot
 			fields[:head_yaw] = read_byte
 		when 0x26
 			packet_name = 'Entity Status'
+			handler = :handle_entity_status
 			fields[:eid] = read_int
 			fields[:status] = read_byte
 		when 0x28

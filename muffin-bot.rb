@@ -77,6 +77,9 @@ module JumpsOnCommand
 		if fields[:message] =~ /<([^>]+)> jump!/
 			chat "OK, #{$1}!"
 		end
+		if fields[:message] =~ /<([^>]+)> where are you?/
+			chat "I am at, x:#{@position_fields[:x]} z:#{@position_fields[:z]} y:#{@position_fields[:y]}!"
+		end
 	end
 end
 
@@ -99,6 +102,12 @@ class MuffinBot < Bot
 		@health = fields[:health]
 	end
 	
+	def handle_entity_status(fields)
+		if fields[:status] == 2
+			@followee_eid = fields[:eid]
+		end
+	end
+	
 	def respond_explosion(fields = {})
 		chat 'YOUR HEAD A SPLODE'
 	end
@@ -111,10 +120,13 @@ class MuffinBot < Bot
 	end
 	
 	def respond_entity_look_and_relative_move(fields)
-		#@position_fields[:y] += fields[:dy]
-		#@position_fields[:x] += fields[:dx]
-		#@position_fields[:z] += fields[:dz]
-		respond_entity_look(fields)
+		if fields[:eid] == @followee_eid
+			@position_fields[:stance] += fields[:dy]/2
+			@position_fields[:y] += fields[:dy]/2
+			@position_fields[:x] += fields[:dx]/2
+			@position_fields[:z] += fields[:dz]/2
+			respond_entity_look(fields)
+		end
 	end
 end
 
