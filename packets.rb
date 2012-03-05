@@ -1,3 +1,5 @@
+# coding: UTF-8
+
 require_relative 'datapack'
 
 def send_keep_alive(fields = {})
@@ -45,7 +47,8 @@ def receive_packet(opts = {})
 	fields = {}
 	packet = read_unsigned_byte
 	packet_hex = '0x%02X' % packet
-
+  handler = nil
+	
 	case packet
 	when 0x00
 		packet_name = 'Keep Alive'
@@ -53,8 +56,8 @@ def receive_packet(opts = {})
 	when 0x01
 		packet_name = 'Login Request'
 		fields[:eid] = read_int
-		read_string
-		fields[:level_type] = read_string
+		read_string_raw
+		fields[:level_type] = read_string_raw
 		fields[:game_mode] = read_int
 		fields[:dimension] = read_int
 		fields[:difficulty] = read_byte
@@ -62,11 +65,13 @@ def receive_packet(opts = {})
 		fields[:max_players] = read_unsigned_byte
 	when 0x02
 		packet_name = 'Handshake'
-		fields[:connection_hash] = read_string
+		fields[:connection_hash] = read_string_raw
 	when 0x03
+		handler = :respond_chat
 		packet_name = 'Chat Message'
 		fields[:message] = read_string
 	when 0x04
+		handler = :parse_time
 		packet_name = 'Time Update'
 		fields[:time] = read_long
 	when 0x05
@@ -81,6 +86,7 @@ def receive_packet(opts = {})
 		fields[:y] = read_int
 		fields[:z] = read_int
 	when 0x08
+		handler = :respond_health
 		packet_name = 'Update Health'
 		fields[:health] = read_short
 		fields[:food] = read_short
@@ -91,8 +97,9 @@ def receive_packet(opts = {})
 		fields[:difficulty] = read_byte
 		fields[:game_mode] = read_byte
 		fields[:world_height] = read_short
-		fields[:level_type] = read_string
+		fields[:level_type] = read_string_raw
 	when 0x0D
+		handler = :respond_position
 		packet_name = 'Player Position & Look'
 		fields[:x] = read_double
 		fields[:stance] = read_double
@@ -115,7 +122,7 @@ def receive_packet(opts = {})
 	when 0x14
 		packet_name = 'Named Entity Spawn'
 		fields[:eid] = read_int
-		fields[:player_name] = read_string
+		fields[:player_name] = read_string_raw
 		fields[:x] = read_int
 		fields[:y] = read_int
 		fields[:z] = read_int
@@ -165,7 +172,7 @@ def receive_packet(opts = {})
 	when 0x19
 		packet_name = 'Painting'
 		fields[:eid] = read_int
-		fields[:title] = read_string
+		fields[:title] = read_string_raw
 		fields[:x] = read_int
 		fields[:y] = read_int
 		fields[:z] = read_int
@@ -267,6 +274,7 @@ def receive_packet(opts = {})
 		fields[:byte_1] = read_byte
 		fields[:byte_2] = read_byte
 	when 0x3C
+		handler = :respond_explosion
 		packet_name = 'Explosion'
 		fields[:x] = read_double
 		fields[:y] = read_double
@@ -314,7 +322,7 @@ def receive_packet(opts = {})
 		fields[:amount] = read_byte
 	when 0xC9
 		packet_name = 'Player List Item'
-		fields[:player_name] = read_string
+		fields[:player_name] = read_string_raw
 		fields[:online] = read_byte
 		fields[:ping] = read_short
 	when 0x82
@@ -322,10 +330,10 @@ def receive_packet(opts = {})
 		fields[:x] = read_int
 		fields[:y] = read_short
 		fields[:z] = read_int
-		fields[:text1] = read_string
-		fields[:text2] = read_string
-		fields[:text3] = read_string
-		fields[:text4] = read_string
+		fields[:text1] = read_string_raw
+		fields[:text2] = read_string_raw
+		fields[:text3] = read_string_raw
+		fields[:text4] = read_string_raw
 	when 0x84
 		packet_name = 'Update Tile Entity'
 		fields[:x] = read_int
@@ -336,8 +344,9 @@ def receive_packet(opts = {})
 		fields[:custom2] = read_int
 		fields[:custom3] = read_int
 	when 0xFF
+		handler = :parse_disconnect
 		packet_name = 'Disconnect/Kick'
-		fields[:reason] = read_string
+		fields[:reason] = read_string_raw
 	else
 		send_chat_message(message: "WHAT'S #{packet_hex} PRECIOUSSS")
 		raise "Received unrecognized packet (#{packet_hex}); previous packet was #{@prev_packet_hex}"
@@ -348,9 +357,7 @@ def receive_packet(opts = {})
 		puts "Received #{packet_name} (#{packet_hex}) #{fields.inspect}"
 	end
 
-	handler_sym = "handler_#{packet_hex}".to_sym
-	opts[handler_sym].call(fields) if opts.has_key?(handler_sym)
-
+	send(handler, fields) if handler
 	@prev_packet_hex = packet_hex
 
 	return fields

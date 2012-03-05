@@ -32,15 +32,7 @@ class Bot
 		
 		while true
 			if @socket.ready?
-				receive_packet(
-					handler_0x03: method(:parse_message),
-					handler_0x04: method(:parse_time),
-					handler_0x08: method(:respond_health),
-					handler_0x0D: method(:respond_position),
-					handler_0x3C: method(:respond_explosion),
-					handler_0xFF: method(:parse_disconnect),
-					whitelist: [0x03, 0x08, 0x0D]
-				)
+				receive_packet(whitelist: [0x03, 0x08, 0x0D])
 			end
 
 			now = Time.now
@@ -61,6 +53,18 @@ class Bot
 	def parse_time(fields)
 	end
 	
+	def respond_position(fields)
+	end
+	
+	def respond_explosion(fields)
+	end
+	
+	def respond_health(fields)
+	end
+	
+	def respond_chat(fields)
+	end
+	
 	def update_position(opts = {})
 		send_player_position_and_look(opts.merge(@position_fields))
 	end
@@ -77,6 +81,10 @@ class Bot
 		puts "Disconnected: #{fields[:reason].encode('US-ASCII')}"
 		exit
   end
+	
+	def chat(message)
+	  send_chat_message message: message
+	end
 end
 
 

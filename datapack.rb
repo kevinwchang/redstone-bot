@@ -1,3 +1,5 @@
+# coding: UTF-8
+
 def byte(b)
 	return [b].pack('c')
 end
@@ -58,8 +60,12 @@ def read_double
 	return @socket.read(8).unpack('G')[0]
 end
 
-def read_string
+def read_string_raw
 	return @socket.read(read_short * 2).force_encoding('UCS-2BE')
+end
+
+def read_string
+  read_string_raw.encode("UTF-8")
 end
 
 ENCHANTABLE = [0x103, 0x105, 0x15A, 0x167,

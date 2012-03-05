@@ -1,3 +1,5 @@
+# coding: UTF-8
+
 require_relative 'redstone-bot.rb'
 
 HIT_RESPONSES = <<END.split("\n")
@@ -70,8 +72,17 @@ module TimeOfDayReporter
 	end
 end
 
+module JumpsOnCommand
+	def respond_chat(fields)
+		if fields[:message] == "<Elavid> jump!"
+			chat "OK!"
+		end
+	end
+end
+
 class MuffinBot < Bot
-	#include TimeOfDayReporter
+	include TimeOfDayReporter
+	include JumpsOnCommand
 	
 	def respond_health(fields = {})
 		if @health != nil && fields[:health] < @health
@@ -79,10 +90,10 @@ class MuffinBot < Bot
 				Thread.new do
 					sleep(4)
 					send_respawn
-					send_chat_message(message: "I have returned!")
+					chat "I have returned!"
 				end
 			elsif @health != nil && fields[:health] < @health
-				send_chat_message(message: HIT_RESPONSES[rand(0..(HIT_RESPONSES.size - 1))]) if (rand(0..1) == 1)
+				chat(HIT_RESPONSES[rand(0..(HIT_RESPONSES.size - 1))]) if (rand(0..1) == 1)
 			end
 		end
 		@health = fields[:health]
