@@ -8,6 +8,7 @@ require 'io/wait'
 require 'thread'
 
 require_relative 'packets'
+require_relative 'jumps_on_command'
 
 if File.exist? 'config.rb'
 	require_relative 'config.rb'
@@ -54,7 +55,7 @@ class Bot
 	def parse_time(fields)
 	end
 	
-	def respond_position(fields)
+	def respond_position
 	end
 	
 	def respond_explosion(fields)
@@ -67,9 +68,17 @@ class Bot
 	end
 	
 	def update_position
-		@position[:y] -= 0.1
-		@position[:stance] -= 0.1
+		fall
+	end
+	
+	def fall
+		change_y -0.1
 		@position[:on_ground] = 1
+	end
+	
+	def change_y(dy)
+		@position[:y] += dy
+		@position[:stance] += dy
 	end
 	
 	def handle_position(fields = {})
