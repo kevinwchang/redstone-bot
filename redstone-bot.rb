@@ -67,7 +67,7 @@ class Bot
 			Thread.new do
 				sleep 1
 				send_respawn
-				chat "I have returned!"
+				respond_respawn
 			end
 		end
 		respond_health
@@ -87,6 +87,9 @@ class Bot
 	end
 	
 	def respond_chat(fields)
+	end
+	
+	def respond_respawn
 	end
 	
 	def update_position
