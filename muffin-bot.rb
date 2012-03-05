@@ -74,7 +74,7 @@ end
 
 module JumpsOnCommand
 	def respond_chat(fields)
-		if fields[:message] == "<Elavid> jump!"
+		if fields[:message] =~ /<[^>]+> jump!/
 			chat "OK!"
 		end
 	end
