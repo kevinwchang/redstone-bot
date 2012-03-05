@@ -46,11 +46,6 @@ class Bot
 				send_keep_alive(squelch: true)
 				last_keep_alive = now
 			end
-			
-			if @health && @health <= 0
-				send_respawn
-				chat "I have returned!"
-			end
 		end
 	end
 	
@@ -63,7 +58,23 @@ class Bot
 	def respond_explosion(fields)
 	end
 	
-	def respond_health(fields)
+	def handle_health(fields)
+		@health = fields[:health]
+		if @health <= 0
+			Thread.new do
+				sleep 1
+				send_respawn
+				respond_respawn
+			end
+		end
+		respond_health
+	end
+	
+	def dead?
+		@health <= 0
+	end
+	
+	def respond_health
 	end
 	
 	def respond_entity_look(fields)
@@ -87,13 +98,16 @@ class Bot
 	def handle_named_entity_spawn(fields)
 	end
 
+	def respond_respawn
+	end
+	
 	def update_position
 		fall
+		@position[:on_ground] = 1
 	end
 	
 	def fall(rate = 0.1)
 		change_y -rate
-		@position[:on_ground] = 1
 	end
 	
 	def change_y(dy)
@@ -103,16 +117,25 @@ class Bot
 	
 	def handle_player_position_and_look(fields = {})
 		@position = fields
+		puts "Received position: #{position_to_string}"
 		send_player_position_and_look squelch: true
+	end
+	
+	def position_to_string(position = @position)
+		return "" if position.nil?
+		"x,y,z = %3.2f,%3.2f,%3.2f g=%d p,y=%3.2f,%3.2f" % [
+		  position[:x], position[:y], position[:z],
+			position[:on_ground], position[:pitch], position[:yaw]
+		]
 	end
 	
 	def parse_disconnect(fields = {})
 		puts "Disconnected: #{fields[:reason].encode('US-ASCII')}"
 		exit
-  end
+	end
 	
 	def chat(message)
-	  send_chat_message message: message
+		send_chat_message message: message
 	end
 end
 

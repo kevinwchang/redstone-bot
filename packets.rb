@@ -39,7 +39,7 @@ class Bot
 	end
 
 	def send_player_position_and_look(opts = {})
-		puts "Sending Player Position & Look (0x0D) #{fields.inspect}" if !opts[:squelch]
+		puts "Sending Position & Look (0x0D) #{position_to_string}" if !opts[:squelch]
 		fields = @position
 		@socket.write(byte(0x0D) + double(fields[:x]) + double(fields[:y]) + double(fields[:stance]) + double(fields[:z]) + float(fields[:yaw]) + float(fields[:pitch]) + byte(fields[:on_ground]))
 	end
@@ -94,7 +94,7 @@ class Bot
 			fields[:y] = read_int
 			fields[:z] = read_int
 		when 0x08
-			handler = :respond_health
+			handler = :handle_health
 			packet_name = 'Update Health'
 			fields[:health] = read_short
 			fields[:food] = read_short
