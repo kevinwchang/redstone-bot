@@ -100,7 +100,7 @@ class MuffinBot < Bot
 	end
 	
 	def respond_explosion(fields = {})
-		send_chat_message(message: 'YOUR HEAD A SPLODE')
+		chat 'YOUR HEAD A SPLODE'
 	end
 end
 
