@@ -67,7 +67,7 @@ class Bot
 	end
 	
 	def update_position
-	  @position_fields[:y] -= 0.1
+		@position_fields[:y] -= 0.1
 		@position_fields[:stance] -= 0.1
 		@position_fields[:on_ground] = 1
 	end
