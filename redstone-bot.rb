@@ -8,6 +8,7 @@ require 'io/wait'
 require 'thread'
 
 require_relative 'packets'
+require_relative 'jumps_on_command'
 
 if File.exist? 'config.rb'
 	require_relative 'config.rb'
@@ -32,11 +33,11 @@ class Bot
 		
 		while true
 			if @socket.ready?
-				receive_packet(whitelist: [0x03, 0x08, 0x0D,0x21])
+				receive_packet(whitelist: [])
 			end
 
 			now = Time.now
-			if @position_fields != nil && now - last_position_update >= 0.05
+			if @position != nil && now - last_position_update >= 0.05
 				update_position
 				send_player_position_and_look squelch: true
 				last_position_update = now
@@ -54,48 +55,85 @@ class Bot
 	def parse_time(fields)
 	end
 	
-	def respond_position(fields)
-	end
-	
 	def respond_explosion(fields)
 	end
 	
-	def respond_health(fields)
+	def handle_health(fields)
+		@health = fields[:health]
+		if @health <= 0
+			Thread.new do
+				sleep 1
+				send_respawn
+			end
+		end
+	end
+	
+	def dead?
+		@health <= 0
 	end
 	
 	def respond_entity_look(fields)
 	end
+
+	def handle_destroy_entity(fields)
+	end
 	
-	def respond_entity_look_and_relative_move(fields)
+	def handle_entity_relative_move(fields)
 	end
 	
 	def handle_entity_status(fields)
 	end
 	
+	def handle_entity_look_and_relative_move(fields)
+	end
+
+	def handle_entity_teleport(fields)
+	end
+
 	def respond_chat(fields)
 	end
 	
-	def update_position
-		@position_fields[:y] -= 0.1
-		@position_fields[:stance] -= 0.1
-		@position_fields[:on_ground] = 1
+	def handle_named_entity_spawn(fields)
+	end
+
+	def handle_respawn(fields)
 	end
 	
-	def respond_position(fields = {})
-		@position_fields = fields
-		@position_fields[:on_ground] = 1
-		@position_fields[:pitch] = 0
-		@position_fields[:yaw] = 270
+	def update_position
+		fall
+		@position[:on_ground] = 1
+	end
+	
+	def fall(rate = 0.1)
+		change_y -rate
+	end
+	
+	def change_y(dy)
+		@position[:y] += dy
+		@position[:stance] += dy
+	end
+	
+	def handle_player_position_and_look(fields = {})
+		@position = fields
+		puts "Received position: #{position_to_string}"
 		send_player_position_and_look squelch: true
+	end
+	
+	def position_to_string(position = @position)
+		return "" if position.nil?
+		"x,y,z = %3.2f,%3.2f,%3.2f g=%d p,y=%3.2f,%3.2f" % [
+		  position[:x], position[:y], position[:z],
+			position[:on_ground], position[:pitch], position[:yaw]
+		]
 	end
 	
 	def parse_disconnect(fields = {})
 		puts "Disconnected: #{fields[:reason].encode('US-ASCII')}"
 		exit
-  end
+	end
 	
 	def chat(message)
-	  send_chat_message message: message
+		send_chat_message message: message
 	end
 end
 
