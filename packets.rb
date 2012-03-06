@@ -75,7 +75,7 @@ class Bot
 			packet_name = 'Handshake'
 			fields[:connection_hash] = read_string
 		when 0x03
-			handler = :respond_chat
+			handler = :handle_chat
 			packet_name = 'Chat Message'
 			fields[:message] = read_string
 		when 0x04

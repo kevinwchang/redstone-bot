@@ -122,7 +122,7 @@ class Bot
 	def position_to_string(position = @position)
 		return "" if position.nil?
 		"x,y,z = %3.2f,%3.2f,%3.2f g=%d p,y=%3.2f,%3.2f" % [
-		  position[:x], position[:y], position[:z],
+			position[:x], position[:y], position[:z],
 			position[:on_ground], position[:pitch], position[:yaw]
 		]
 	end
