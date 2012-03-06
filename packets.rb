@@ -372,7 +372,9 @@ class Bot
 			puts "Received #{packet_name} (#{packet_hex}) #{fields.inspect}"
 		end
 
-		send(handler, fields) if handler
+		@mutex.synchronize do
+			send(handler, fields) if handler
+		end
 		@prev_packet_hex = packet_hex
 
 		return fields

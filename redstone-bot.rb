@@ -16,37 +16,55 @@ else
 	require_relative 'default_config.rb'
 end
 
+Thread.abort_on_exception = true
+
 class Bot
 	attr_reader :health
 
 	def run
+		@mutex = Mutex.new
+	
 		puts "Connecting to #{HOSTNAME}:#{PORT}..."
 		@socket = TCPSocket.open HOSTNAME, PORT
 
-		send_handshake USERNAME, HOSTNAME, PORT
+		send_handshake username, HOSTNAME, PORT
 		receive_packet
 
-		send_login_request(username: USERNAME)
+		send_login_request(username: username)
 		eid = receive_packet[:eid]
 
-		last_keep_alive = last_position_update = Time.at(0)
+		last_keep_alive = Time.at(0)
 		
-		while true
-			if @socket.ready?
-				receive_packet(whitelist: [])
-			end
-
-			now = Time.now
-			if @position != nil && now - last_position_update >= 0.05
-				update_position
-				send_player_position_and_look squelch: true
-				last_position_update = now
-			end
-			if now - last_keep_alive >= 1
-				send_keep_alive(squelch: true)
-				last_keep_alive = now
+		regular_updates_thread = Thread.new do
+			while true
+				sleep 0.05
+				@mutex.synchronize do
+					if @position
+						update_position
+						send_player_position_and_look squelch: true
+					else
+						# the server has not told us our position yet
+					end
+					
+					if Time.now - last_keep_alive >= 1
+						send_keep_alive(squelch: true)
+						last_keep_alive = Time.now
+					end
+				end
 			end
 		end
+		
+		while true
+			receive_packet(whitelist: [])
+		end
+	end
+	
+	def username
+		USERNAME
+	end
+	
+	def synchronize(&block)
+		@mutex.synchronize(&block)
 	end
 	
 	def parse_message(fields)
@@ -90,7 +108,7 @@ class Bot
 	def handle_entity_teleport(fields)
 	end
 
-	def respond_chat(fields)
+	def handle_chat(fields)
 	end
 	
 	def handle_named_entity_spawn(fields)
@@ -115,7 +133,7 @@ class Bot
 	
 	def handle_player_position_and_look(fields = {})
 		@position = fields
-		puts "Received position: #{position_to_string}"
+		#puts "Received position: #{position_to_string}"
 		send_player_position_and_look squelch: true
 	end
 	

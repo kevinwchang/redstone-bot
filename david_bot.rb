@@ -3,9 +3,9 @@ require_relative 'redstone-bot.rb'
 class DavidBot < Bot
   include JumpsOnCommand
 	
-	def handle_respawn
+	def handle_respawn(fields)
 		super
-		chat "DavidBot is here!"
+		chat "#{username} is here!"
 	end
 end
 
