@@ -66,11 +66,11 @@ class KevinBot < Bot
 		update_target_position_absolute(fields)
 	end	
 
-  def handle_entity_relative_move(fields)
+	def handle_entity_relative_move(fields)
 		if @targets.has_key?(fields[:eid])
 			update_target_position_relative(fields)
 		end
-  end
+	end
 
 	def handle_entity_look_and_relative_move(fields)
 		if @targets.has_key?(fields[:eid])
@@ -84,13 +84,13 @@ class KevinBot < Bot
 		end
 	end
 
-  def handle_destroy_entity(fields)
+	def handle_destroy_entity(fields)
 		@targets.delete(fields[:eid])
 		look_closest_target
-  end
+	end
 
- def handle_player_position_and_look(fields = {})
-    @position = fields
+	def handle_player_position_and_look(fields = {})
+		@position = fields
 		if @y_velocity > 0
 			@jumphit = true
 		else
@@ -98,15 +98,15 @@ class KevinBot < Bot
 			@jumping_end = Time.now
 			@y_velocity = 0
 		end
-    #puts "Received position: #{position_to_string}"
-    send_player_position_and_look squelch: true
-  end
+		#puts "Received position: #{position_to_string}"
+		send_player_position_and_look squelch: true
+	end
 
 	LEASH = 2
 	SPEED_DIVIDER = 4
 	JUMP_VELOCITY = 0.7
 	GRAVITY = 0.1
-  JUMP_COOLDOWN = 0.8
+	JUMP_COOLDOWN = 0.8
 
 	def update_position
 		if @closest != nil && @position != nil && @closest[:distance] > LEASH && @jumphit != true
