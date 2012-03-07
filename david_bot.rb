@@ -9,7 +9,7 @@ class DavidBot < Bot
 	end
 	
 	def handle_chat(message)
-		super
+		puts "DavidBot#handle_chat #{message}"
 		return unless message.is_a?(DeathMessage)
 		return if message.username == username
 		response = case message.death_type

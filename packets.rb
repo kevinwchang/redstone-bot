@@ -1,7 +1,7 @@
 # coding: UTF-8
 
 require_relative 'datapack'
-require_relative 'chat_message'
+require_relative 'lib/chat_message'
 
 class Bot
 	def send_keep_alive(fields = {})
