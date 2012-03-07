@@ -1,6 +1,7 @@
 # coding: UTF-8
 
 require_relative 'datapack'
+require_relative 'chat_message'
 
 class Bot
 	def send_keep_alive(fields = {})
@@ -23,7 +24,7 @@ class Bot
 	end
 
 	def send_chat_message(fields = {})
-		puts "Sending Chat Message (0x03) #{fields.inspect}"
+		puts "Sending Chat Message (0x03): #{fields[:message].inspect}"
 		@socket.write(byte(0x03) + string(fields[:message]))
 	end
 
@@ -77,7 +78,7 @@ class Bot
 		when 0x03
 			handler = :handle_chat
 			packet_name = 'Chat Message'
-			fields[:message] = read_string
+			fields = ChatMessage.from_message(read_string)
 		when 0x04
 			handler = :parse_time
 			packet_name = 'Time Update'
@@ -372,7 +373,7 @@ class Bot
 			puts "Received #{packet_name} (#{packet_hex}) #{fields.inspect}"
 		end
 
-		@mutex.synchronize do
+		synchronize do
 			send(handler, fields) if handler
 		end
 		@prev_packet_hex = packet_hex

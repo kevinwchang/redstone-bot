@@ -15,10 +15,10 @@ module JumpsOnCommand
 		end
 	end
 	
-	def handle_chat(fields)
+	def handle_chat(message)
 		super
-		if fields[:message] =~ /<([^>]+)> jump!/
-			chat "OK, #$1!"
+		if message.is_a?(UserChatMessage) && message.contents == 'jump!'
+			chat "OK, #{message.username}!"
 			@jumping = true
 			@jumping_start = Time.now
 		end

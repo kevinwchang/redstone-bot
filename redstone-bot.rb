@@ -38,7 +38,7 @@ class Bot
 		regular_updates_thread = Thread.new do
 			while true
 				sleep 0.05
-				@mutex.synchronize do
+				synchronize do
 					if @position
 						update_position
 						send_player_position_and_look squelch: true
@@ -108,7 +108,8 @@ class Bot
 	def handle_entity_teleport(fields)
 	end
 
-	def handle_chat(fields)
+	def handle_chat(message)
+		puts message
 	end
 	
 	def handle_named_entity_spawn(fields)
