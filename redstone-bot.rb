@@ -81,7 +81,7 @@ class Bot
 		if @health <= 0
 			Thread.new do
 				sleep 1
-				send_respawn
+				synchronize { send_respawn }
 			end
 		end
 	end
