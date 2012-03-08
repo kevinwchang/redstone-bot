@@ -374,10 +374,23 @@ class Bot
 		end
 
 		synchronize do
-			send(handler, fields) if handler
+			aggregate_method_call(handler, fields) if handler
 		end
 		@prev_packet_hex = packet_hex
 
 		return fields
+	end
+	
+	# Calls all methods with the given method name even if they were overridden.
+	# This means that multiple modules and classes can define packet handler methods
+	# and all of those methods will get called when that packet is received, even
+	# though some of those methods can not be called by normal means.
+	def aggregate_method_call(method_name, *args)
+		self.class.ancestors.each do |ancestor|
+			next unless ancestor.method_defined?(method_name)
+			method = ancestor.instance_method(method_name)
+			next if method.owner != ancestor
+			method.bind(self).call *args
+		end
 	end
 end

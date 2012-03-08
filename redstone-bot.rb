@@ -79,10 +79,7 @@ class Bot
 	def handle_health(fields)
 		@health = fields[:health]
 		if @health <= 0
-			Thread.new do
-				sleep 1
-				synchronize { send_respawn }
-			end
+			later(1) { send_respawn }
 		end
 	end
 	
@@ -153,6 +150,13 @@ class Bot
 	
 	def chat(message)
 		send_chat_message message: message
+	end
+	
+	def later(time, &block)
+		Thread.new do
+			sleep(time)
+			synchronize(&block)
+		end
 	end
 end
 

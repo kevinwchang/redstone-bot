@@ -1,15 +1,24 @@
 require_relative 'redstone-bot.rb'
 
+module GreetsElavid
+	def handle_chat(message)
+		if message.is_a?(ColoredMessage) && message.contents == "Elavid joined the game."
+			later(3) do
+			  chat 'WOOHOO Elavid is here!'
+			end
+		end
+	end
+end
+
 class DavidBot < Bot
   include JumpsOnCommand
+	include GreetsElavid
 	
 	def handle_respawn(fields)
-		super
 		chat "#{username} is here!"
 	end
 	
 	def handle_chat(message)
-		puts "DavidBot#handle_chat #{message}"
 		return unless message.is_a?(DeathMessage)
 		return if message.username == username
 		response = case message.death_type

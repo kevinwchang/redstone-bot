@@ -16,7 +16,6 @@ module JumpsOnCommand
 	end
 	
 	def handle_chat(message)
-		super
 		if message.is_a?(UserChatMessage) && message.contents == 'jump!'
 			chat "OK, #{message.username}!"
 			@jumping = true
