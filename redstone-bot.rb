@@ -78,7 +78,7 @@ class Bot
 	
 	def handle_health(fields)
 		@health = fields[:health]
-		if @health <= 0
+		if dead?
 			later(1) { send_respawn }
 		end
 	end

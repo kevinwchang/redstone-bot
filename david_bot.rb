@@ -1,5 +1,32 @@
 require_relative 'redstone-bot.rb'
 
+module EvaluatesRuby
+	def handle_chat(message)
+		if message.is_a?(UserChatMessage) && message.contents =~ /eval (.+)/
+			string = $1
+			result = nil
+			thread = Thread.new do
+				$SAFE = 4
+				result = begin
+					eval string
+				rescue Exception => e
+					e.message
+				end
+			end
+			if !thread.join(0.5)
+				thread.kill
+				result = ":("
+			end
+			
+			case result
+				when String then chat result
+				when nil then
+				else chat result.inspect
+				end
+		end
+	end
+end
+
 module GreetsElavid
 	def handle_chat(message)
 		if message.is_a?(ColoredMessage) && message.contents == "Elavid joined the game."
@@ -13,6 +40,7 @@ end
 class DavidBot < Bot
   include JumpsOnCommand
 	include GreetsElavid
+	include EvaluatesRuby
 	
 	def handle_respawn(fields)
 		chat "#{username} is here!"
