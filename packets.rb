@@ -11,6 +11,10 @@ class Bot
 
 	PROTOCOL_VERSION = 28
 
+	# Source: http://www.wiki.vg/Chat except I left out the funny characters
+	# because I'd have to think a little bit more about encodings to make it work
+	AllowedChatChars = '!\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_abcdefghijklmnopqrstuvwxyz{|}~| '.split('')
+	
 	def send_login_request(fields)
 		fields = {protocol_version: PROTOCOL_VERSION}.merge(fields)
 		puts "Sending Login Request (0x01) #{fields.inspect}"
@@ -24,8 +28,10 @@ class Bot
 	end
 
 	def send_chat_message(fields = {})
-		puts "Sending Chat Message (0x03): #{fields[:message].inspect}"
-		@socket.write(byte(0x03) + string(fields[:message]))
+		original_str = fields[:message]
+		safe_str = original_str.chars.select { |c| AllowedChatChars.include?(c) }[0,100].join
+		puts "Sending Chat Message (0x03): #{original_str.inspect}"
+		@socket.write(byte(0x03) + string(safe_str))
 	end
 
 	def send_respawn(fields = {dimension: 0, difficulty: 1, game_mode: 0, world_height: 128, map_seed: 0, level_type: 'DEFAULT'})
