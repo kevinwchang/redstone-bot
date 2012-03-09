@@ -1,6 +1,8 @@
 require_relative 'redstone-bot.rb'
 
 module EvaluatesRuby
+	# Vulnerabilities:
+	#   Thread.new { while true; end }
 	def handle_chat(message)
 		if message.is_a?(UserChatMessage) && message.contents =~ /eval (.+)/
 			string = $1
