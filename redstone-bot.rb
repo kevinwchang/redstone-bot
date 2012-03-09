@@ -19,6 +19,10 @@ end
 class Bot
 	attr_reader :health
 
+	def initialize
+		@whitelist = []
+	end
+
 	def run
 		puts "Connecting to #{HOSTNAME}:#{PORT}..."
 		@socket = TCPSocket.open HOSTNAME, PORT
@@ -33,7 +37,7 @@ class Bot
 		
 		while true
 			if @socket.ready?
-				receive_packet(whitelist: [])
+				receive_packet(whitelist: @whitelist)
 			end
 
 			now = Time.now
