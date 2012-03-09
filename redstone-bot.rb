@@ -16,6 +16,8 @@ else
 	require_relative 'default_config.rb'
 end
 
+Thread.abort_on_exception = true
+
 class Bot
 	attr_reader :health
 
@@ -24,33 +26,49 @@ class Bot
 	end
 
 	def run
+		@mutex = Mutex.new
+	
 		puts "Connecting to #{HOSTNAME}:#{PORT}..."
 		@socket = TCPSocket.open HOSTNAME, PORT
 
-		send_handshake USERNAME, HOSTNAME, PORT
+		send_handshake username, HOSTNAME, PORT
 		receive_packet
 
-		send_login_request(username: USERNAME)
+		send_login_request(username: username)
 		eid = receive_packet[:eid]
 
-		last_keep_alive = last_position_update = Time.at(0)
+		last_keep_alive = Time.at(0)
 		
-		while true
-			if @socket.ready?
-				receive_packet(whitelist: @whitelist)
-			end
-
-			now = Time.now
-			if @position != nil && now - last_position_update >= 0.05
-				update_position
-				send_player_position_and_look squelch: true
-				last_position_update = now
-			end
-			if now - last_keep_alive >= 1
-				send_keep_alive(squelch: true)
-				last_keep_alive = now
+		regular_updates_thread = Thread.new do
+			while true
+				sleep 0.05
+				synchronize do
+					if @position
+						update_position
+						send_player_position_and_look squelch: true
+					else
+						# the server has not told us our position yet
+					end
+					
+					if Time.now - last_keep_alive >= 1
+						send_keep_alive(squelch: true)
+						last_keep_alive = Time.now
+					end
+				end
 			end
 		end
+		
+		while true
+			receive_packet(whitelist: @whitelist)
+		end
+	end
+	
+	def username
+		USERNAME
+	end
+	
+	def synchronize(&block)
+		@mutex.synchronize(&block)
 	end
 	
 	def parse_message(fields)
@@ -64,21 +82,13 @@ class Bot
 	
 	def handle_health(fields)
 		@health = fields[:health]
-		if @health <= 0
-			Thread.new do
-				sleep 1
-				send_respawn
-				respond_respawn
-			end
+		if dead?
+			later(1) { send_respawn }
 		end
-		respond_health
 	end
 	
 	def dead?
 		@health <= 0
-	end
-	
-	def respond_health
 	end
 	
 	def respond_entity_look(fields)
@@ -90,19 +100,23 @@ class Bot
 	def handle_entity_relative_move(fields)
 	end
 	
+	def handle_entity_status(fields)
+	end
+	
 	def handle_entity_look_and_relative_move(fields)
 	end
 
 	def handle_entity_teleport(fields)
 	end
 
-	def respond_chat(fields)
+	def handle_chat(message)
+		puts message
 	end
 	
 	def handle_named_entity_spawn(fields)
 	end
 
-	def respond_respawn
+	def handle_respawn(fields)
 	end
 	
 	def update_position
@@ -121,14 +135,14 @@ class Bot
 	
 	def handle_player_position_and_look(fields = {})
 		@position = fields
-		puts "Received position: #{position_to_string}"
+		#puts "Received position: #{position_to_string}"
 		send_player_position_and_look squelch: true
 	end
 	
 	def position_to_string(position = @position)
 		return "" if position.nil?
 		"x,y,z = %3.2f,%3.2f,%3.2f g=%d p,y=%3.2f,%3.2f" % [
-		  position[:x], position[:y], position[:z],
+			position[:x], position[:y], position[:z],
 			position[:on_ground], position[:pitch], position[:yaw]
 		]
 	end
@@ -140,6 +154,13 @@ class Bot
 	
 	def chat(message)
 		send_chat_message message: message
+	end
+	
+	def later(time, &block)
+		Thread.new do
+			sleep(time)
+			synchronize(&block)
+		end
 	end
 end
 

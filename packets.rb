@@ -1,6 +1,7 @@
 # coding: UTF-8
 
 require_relative 'datapack'
+require_relative 'lib/chat_message'
 
 class Bot
 	def send_keep_alive(fields = {})
@@ -10,6 +11,10 @@ class Bot
 
 	PROTOCOL_VERSION = 28
 
+	# Source: http://www.wiki.vg/Chat except I left out the funny characters
+	# because I'd have to think a little bit more about encodings to make it work
+	AllowedChatChars = '!\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_abcdefghijklmnopqrstuvwxyz{|}~| '.split('')
+	
 	def send_login_request(fields)
 		fields = {protocol_version: PROTOCOL_VERSION}.merge(fields)
 		puts "Sending Login Request (0x01) #{fields.inspect}"
@@ -23,8 +28,10 @@ class Bot
 	end
 
 	def send_chat_message(fields = {})
-		puts "Sending Chat Message (0x03) #{fields.inspect}"
-		@socket.write(byte(0x03) + string(fields[:message]))
+		original_str = fields[:message]
+		safe_str = original_str.chars.select { |c| AllowedChatChars.include?(c) }[0,100].join
+		puts "Sending Chat Message (0x03): #{original_str.inspect}"
+		@socket.write(byte(0x03) + string(safe_str))
 	end
 
 	def send_respawn(fields = {dimension: 0, difficulty: 1, game_mode: 0, world_height: 128, map_seed: 0, level_type: 'DEFAULT'})
@@ -75,9 +82,9 @@ class Bot
 			packet_name = 'Handshake'
 			fields[:connection_hash] = read_string
 		when 0x03
-			handler = :respond_chat
+			handler = :handle_chat
 			packet_name = 'Chat Message'
-			fields[:message] = read_string
+			fields = ChatMessage.from_message(read_string)
 		when 0x04
 			handler = :parse_time
 			packet_name = 'Time Update'
@@ -94,13 +101,14 @@ class Bot
 			fields[:y] = read_int
 			fields[:z] = read_int
 		when 0x08
-			handler = :handle_health
 			packet_name = 'Update Health'
+			handler = :handle_health
 			fields[:health] = read_short
 			fields[:food] = read_short
 			fields[:food_saturation] = read_float
 		when 0x09
 			packet_name = 'Respawn'
+			handler = :handle_respawn
 			fields[:dimension] = read_int
 			fields[:difficulty] = read_byte
 			fields[:game_mode] = read_byte
@@ -240,6 +248,7 @@ class Bot
 			fields[:head_yaw] = read_byte
 		when 0x26
 			packet_name = 'Entity Status'
+			handler = :handle_entity_status
 			fields[:eid] = read_int
 			fields[:status] = read_byte
 		when 0x28
@@ -370,9 +379,24 @@ class Bot
 			puts "Received #{packet_name} (#{packet_hex}) #{fields.inspect}"
 		end
 
-		send(handler, fields) if handler
+		synchronize do
+			aggregate_method_call(handler, fields) if handler
+		end
 		@prev_packet_hex = packet_hex
 
 		return fields
+	end
+	
+	# Calls all methods with the given method name even if they were overridden.
+	# This means that multiple modules and classes can define packet handler methods
+	# and all of those methods will get called when that packet is received, even
+	# though some of those methods can not be called by normal means.
+	def aggregate_method_call(method_name, *args)
+		self.class.ancestors.each do |ancestor|
+			next unless ancestor.method_defined?(method_name)
+			method = ancestor.instance_method(method_name)
+			next if method.owner != ancestor
+			method.bind(self).call *args
+		end
 	end
 end
